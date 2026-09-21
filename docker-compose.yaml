@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: tablesync-database
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - "tablesync_pgdata:/var/lib/postgresql/data"
+
+volumes:
+  tablesync_pgdata:
