@@ -8,6 +8,8 @@ import com.alvinskylers.tablesync.exception.TableNumberExistsException;
 import com.alvinskylers.tablesync.mapper.TableMapper;
 import com.alvinskylers.tablesync.repository.TableRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -18,6 +20,12 @@ public class TableService {
 
     private final TableMapper tableMapper;
     private final TableRepository tableRepository;
+
+
+    public Page<TableResponse> getTables(Pageable pageable) {
+        return  tableRepository.findAll(pageable)
+                .map(tableMapper::mapTableToResponse);
+    }
 
     public TableResponse createTable(TableRequest request) {
         if (tableRepository.existsByTableNumber(request.tableNumber())) {
@@ -41,7 +49,8 @@ public class TableService {
     public TableResponse updateTable(UUID id, TableRequest request) {
         RestaurantTable table = findTableById(id);
 
-        if (request.tableNumber() != table.getTableNumber()) {
+        if (request.tableNumber() != table.getTableNumber()
+                && tableRepository.existsByTableNumber(request.tableNumber())) {
             throw new TableNumberExistsException("table with number exists, number: " + request.tableNumber());
         }
 
