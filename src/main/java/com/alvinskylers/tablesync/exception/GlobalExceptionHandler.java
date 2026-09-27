@@ -38,8 +38,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> badCredentialsExceptionHandler(BadCredentialsException ex) {
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+                .status(HttpStatus.UNAUTHORIZED)
                 .body(ErrorResponse.of("INCORRECT_CREDENTIALS",  "Invalid email or password", null));
+    }
+
+    @ExceptionHandler(TableNotFoundException.class)
+    public ResponseEntity<ErrorResponse> tableNotFoundExceptionHandler(TableNotFoundException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of("TABLE_NOT_FOUND", ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(TableNumberExistsException.class)
+    public ResponseEntity<ErrorResponse> tableNumberExistsExceptionHandler(TableNumberExistsException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of("TABLE_NUMBER_TAKEN", ex.getMessage(), null));
     }
 
 
