@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -37,6 +38,7 @@ public class TableController {
                 .body(tables);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<TableResponse> createTable(@Valid @RequestBody TableRequest request) {
         TableResponse response = tableService.createTable(request);
@@ -53,6 +55,7 @@ public class TableController {
                 .body(response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<TableResponse> updateTable(@PathVariable UUID id, @Valid @RequestBody TableRequest request) {
         TableResponse response = tableService.updateTable(id, request);
@@ -61,6 +64,7 @@ public class TableController {
                 .body(response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTable(@PathVariable UUID id) {
         tableService.deleteTable(id);
