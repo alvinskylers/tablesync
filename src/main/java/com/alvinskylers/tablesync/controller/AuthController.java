@@ -1,5 +1,7 @@
 package com.alvinskylers.tablesync.controller;
 
+import com.alvinskylers.tablesync.dto.auth.AuthResponse;
+import com.alvinskylers.tablesync.dto.auth.LoginRequest;
 import com.alvinskylers.tablesync.dto.auth.RegisterRequest;
 import com.alvinskylers.tablesync.dto.user.UserResponse;
 import com.alvinskylers.tablesync.service.AuthService;
@@ -25,4 +27,12 @@ public class AuthController {
                 .status(HttpStatus.CREATED)
                 .body(authService.register(request));
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(authService.login(request));
+    }
+
 }
