@@ -29,15 +29,15 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(AuthorizationDeniedException.class)
-    public ResponseEntity<ErrorResponse> AuthorizationDeniedExceptionHandler(AuthorizationDeniedException ex){
+    public ResponseEntity<ErrorResponse> authorizationDeniedExceptionHandler(AuthorizationDeniedException ex){
 
         return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
+                .status(HttpStatus.FORBIDDEN)
                 .body(ErrorResponse.of("FORBIDDEN", "You do not have the permissions to perform this action", null));
     }
 
      @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> HttpMessageNotReadableExceptionHandler(HttpMessageNotReadableException ex) {
+    public ResponseEntity<ErrorResponse> httpMessageNotReadableExceptionHandler(HttpMessageNotReadableException ex) {
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -76,5 +76,28 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of("TABLE_NUMBER_TAKEN", ex.getMessage(), null));
     }
 
+    @ExceptionHandler(InvalidReservationTimeException.class)
+    public ResponseEntity<ErrorResponse> invalidReservationTimeExceptionHandler(InvalidReservationTimeException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of("INVALID_RESERVATION_TIME", ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(ReservationNotFoundException.class)
+    public ResponseEntity<ErrorResponse> reservationNotFoundExceptionHandler(ReservationNotFoundException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of("RESERVATION_NOT_FOUND", ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(TableReservedException.class)
+    public ResponseEntity<ErrorResponse> tableReservationNotFoundExceptionHandler(TableReservedException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of("TABLE_RESERVED", ex.getMessage(), null));
+    }
 
 }
