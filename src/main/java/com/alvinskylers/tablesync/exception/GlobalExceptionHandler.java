@@ -100,4 +100,12 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of("TABLE_RESERVED", ex.getMessage(), null));
     }
 
+    @ExceptionHandler(ReservationUpdateStatusException.class)
+    public ResponseEntity<ErrorResponse>reservationUpdateStatusExceptionHandler(ReservationUpdateStatusException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of("INVALID_RESERVATION_TRANSITION_STATUS", ex.getMessage(), null));
+    }
+
 }
