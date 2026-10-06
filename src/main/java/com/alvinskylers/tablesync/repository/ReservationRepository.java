@@ -19,6 +19,17 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
 
     @Query("SELECT r FROM Reservation r " +
             "WHERE r.table.id = :tableId " +
+            "AND r.status IN :statuses " +
+            "AND r.reservationStart < :end " +
+            "AND r.reservationEnd > :start")
+    List<Reservation> findReservationsForTableInRange(
+            @Param("tableId") UUID tableId,
+            @Param("statuses") List<Status> statuses,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
+
+    @Query("SELECT r FROM Reservation r " +
+            "WHERE r.table.id = :tableId " +
             "AND r.status IN :blockingStatuses " +
             "AND r.reservationStart < :newEnd " +
             "AND r.reservationEnd > :newStart")
