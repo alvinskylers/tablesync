@@ -1,5 +1,6 @@
 package com.alvinskylers.tablesync.controller;
 
+import com.alvinskylers.tablesync.dto.table.BookedSlot;
 import com.alvinskylers.tablesync.dto.table.TableRequest;
 import com.alvinskylers.tablesync.dto.table.TableResponse;
 import com.alvinskylers.tablesync.service.TableService;
@@ -14,6 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -53,6 +57,21 @@ public class TableController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(response);
+    }
+
+    @GetMapping("/{id}/schedules")
+    public ResponseEntity<List<BookedSlot>> getReservations(
+            @PathVariable UUID id,
+            @RequestParam(required = false) LocalDateTime start,
+            @RequestParam(required = false) LocalDateTime end) {
+
+        LocalDateTime effectiveStart = (start != null) ? start: LocalDate.now().atStartOfDay();
+        LocalDateTime effectiveEnd = (end != null) ? end : LocalDate.now().plusDays(1).atStartOfDay();
+
+        List<BookedSlot> reservations = tableService.getTableActiveReservations(id, effectiveStart, effectiveEnd);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(reservations);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
