@@ -9,6 +9,14 @@ spring:
     url: jdbc:postgresql://localhost:${POSTGRES_PORT}/${POSTGRES_DB}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
+  web :
+    error:
+      include-stacktrace: never
+      include-exception: false
+      include-binding-errors: never
+      include-path: never
+      whitelabel:
+        enabled: false
 
 jwt:
   secret: ${JWT_SECRET}
