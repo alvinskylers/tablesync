@@ -1,21 +1,63 @@
 package com.alvinskylers.tablesync.exception;
 
 import com.alvinskylers.tablesync.dto.error.ErrorResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.web.error.ErrorPageRegistrar;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import org.springframework.web.servlet.function.EntityResponse;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> exceptionHandler(Exception ex) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ErrorResponse.of("UNEXPECTED_ERROR", "An unexpected error occurred.", null));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> noResourceFoundHandler(NoResourceFoundException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of("RESOURCE_NOT_FOUND", "Requested resource not available.", null));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> httpRequestMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        return ResponseEntity
+                .status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(ErrorResponse.of("METHOD_NOT_ALLOWED", "Requested method is not allowed", null));
+    }
+
+    public ResponseEntity<ErrorResponse> missingServletRequestParameterExceptionHandler(MissingServletRequestParameterException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of("BAD_REQUEST", "Requested method is not allowed", null));
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> httpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException ex) {
+        return ResponseEntity
+                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(ErrorResponse.of("UNSUPPORTED_MEDIA_TYPE","Wrong content type" ,null));
+
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> validationHandler(MethodArgumentNotValidException ex) {
@@ -44,6 +86,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .body(ErrorResponse.of("FORBIDDEN", "You do not have the permissions to perform this action", null));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> dataIntegrityViolationHandler(DataIntegrityViolationException ex) {
+        String cause = ex.getMostSpecificCause().getMessage();
+
+        if (cause != null && cause.contains("no_overlapping_reservations")) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(ErrorResponse.of("TABLE_RESERVED", "This table is reserved at selected time.", null));
+        }
+
+        log.warn("Data integrity violation: {}", cause);
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of("DATA_CONFLICT", "Request conflicts with existing data", null));
     }
 
      @ExceptionHandler(HttpMessageNotReadableException.class)
