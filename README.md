@@ -11,7 +11,7 @@ This is an API-only project (no frontend), built as a personal learning project.
 - PostgreSQL 16
 - Flyway (versioned database migrations)
 - JWT authentication (jjwt)
-- Docker / Docker Compose (database)
+- Docker / Docker Compose (database and application)
 - Maven, Lombok
 
 ## Features
@@ -81,28 +81,37 @@ openssl rand -base64 32
 
 Do not commit `.env`. It is listed in `.gitignore`.
 
-### 2. Start PostgreSQL
+### 2. Run the application
+
+**Option A: everything in Docker (recommended)**
 
 ```
-docker compose up -d
+docker compose up -d --build
 ```
 
-### 3. Run the application
+This builds the application image (multi-stage `Dockerfile`), starts PostgreSQL, waits for its healthcheck to pass, then starts the app. Follow the logs with `docker compose logs -f app`.
+
+**Option B: database in Docker, app from your IDE**
 
 ```
+docker compose up -d postgres
 ./mvnw spring-boot:run
 ```
 
+Stop the `app` container first if it is running, since both use the same port.
+
 The `dev` profile is active by default. Flyway runs the migrations in `src/main/resources/db/migration` on startup, and Hibernate only validates the schema (`ddl-auto: validate`).
 
-The API is available at `http://localhost:8080/api/v1`.
+The API is available at `http://localhost:8080/api/v1` (or the `APP_PORT` you configured).
 
-### 4. Create the first admin
+Inside Compose, the app connects to the database through `SPRING_DATASOURCE_URL` (host `postgres`, port `5432`), which overrides the `localhost` URL in `application.yml`.
+
+### 3. Create the first admin
 
 Registration only creates customers, so promote one directly in the database:
 
 ```
-docker exec -it tablesync-db psql -U tablesync_user -d tablesync \
+docker exec -it tablesync-database psql -U tablesync_user -d tablesync \
   -c "UPDATE users SET role = 'ADMIN' WHERE email = 'you@example.com';"
 ```
 
@@ -207,7 +216,6 @@ src/main/java/com/alvinskylers/tablesync
 
 ## Roadmap
 
-- Dockerfile and Compose service for the application itself
 - Refresh tokens and a real logout flow
 - First-admin bootstrap that does not require manual SQL
 - Automated tests
