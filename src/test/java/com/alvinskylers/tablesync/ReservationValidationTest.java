@@ -2,18 +2,28 @@ package com.alvinskylers.tablesync;
 
 import com.alvinskylers.tablesync.dto.reservation.CreateReservationRequest;
 import com.alvinskylers.tablesync.entity.Reservation;
-import com.alvinskylers.tablesync.exception.InvalidReservationTimeException;
-import com.alvinskylers.tablesync.exception.TableReservedException;
+import com.alvinskylers.tablesync.entity.User;
+import com.alvinskylers.tablesync.entity.enums.Role;
+import com.alvinskylers.tablesync.entity.enums.Status;
+import com.alvinskylers.tablesync.exception.*;
 import com.alvinskylers.tablesync.repository.ReservationRepository;
+import com.alvinskylers.tablesync.security.UserPrincipal;
 import com.alvinskylers.tablesync.validator.ReservationValidator;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -81,6 +91,39 @@ public class ReservationValidationTest {
         assertDoesNotThrow(() -> validator.validateReservationCreation(request));
         verify(reservationRepository).findOverlappingReservations(
                 eq(tableId), anyList(), eq(start), eq(end));
+    }
+
+    private Reservation reservationOf(User customer, Status status) {
+        return Reservation.builder()
+                .id(UUID.randomUUID())
+                .customer(customer)
+                .status(status)
+                .build();
+    }
+
+    private void givenReservationExists(Reservation reservation) {
+        when(reservationRepository.findById(reservation.getId()))
+                .thenReturn(Optional.of(reservation));
+    }
+
+    private User userWithRole(Role role) {
+        return User.builder()
+                .id(UUID.randomUUID())
+                .email("test@example.com")
+                .role(role)
+                .build();
+    }
+
+    private void loginAs(User user) {
+        var principal = new UserPrincipal(user);
+        var auth = new UsernamePasswordAuthenticationToken(
+                principal, null, principal.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
     }
 
 }
