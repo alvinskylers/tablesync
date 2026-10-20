@@ -101,6 +101,61 @@ public class ReservationValidationTest {
                 .build();
     }
 
+    @Test
+    void cancellation_customerCancelOwnReservation_allowed() {
+        var owner = userWithRole(Role.CUSTOMER);
+        var reservation = reservationOf(owner, Status.CONFIRMED);
+        givenReservationExists(reservation);
+        loginAs(owner);
+
+        assertDoesNotThrow(() -> validator.validateReservationCancellation(reservation.getId()));
+    }
+
+    @Test
+    void cancellation_customerCancelOthersReservation_throwsAuthorizationDenied() {
+        var owner = userWithRole(Role.CUSTOMER);
+        var otherCustomer = userWithRole(Role.CUSTOMER);
+        var reservation = reservationOf(owner, Status.CONFIRMED);
+        givenReservationExists(reservation);
+        loginAs(otherCustomer);
+
+        assertThrows(AuthorizationDeniedException.class,
+                () -> validator.validateReservationCancellation(reservation.getId()));
+    }
+
+    @Test
+    void cancellation_staffCancelAnyReservation() {
+        var owner = userWithRole(Role.CUSTOMER);
+        var staff = userWithRole(Role.WAITER);
+        var reservation = reservationOf(owner, Status.CONFIRMED);
+        givenReservationExists(reservation);
+        loginAs(staff);
+
+        assertDoesNotThrow(() -> validator.validateReservationCancellation(reservation.getId()) );
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = Status.class, names ={"CANCELLED", "COMPLETED", "REJECTED"})
+    void cancellation_terminalStatus_throwsStatusConflict(Status status) {
+        var customer = userWithRole(Role.CUSTOMER);
+        var reservation = reservationOf(customer, status);
+        givenReservationExists(reservation);
+        loginAs(customer);
+
+        assertThrows(ReservationUpdateStatusException.class,
+                () -> validator.validateReservationCancellation(reservation.getId()));
+    }
+
+    @Test
+    void cancellation_reservationNotFound_throwsNotFound() {
+        var id = UUID.randomUUID();
+        when(reservationRepository.findById(id))
+                .thenReturn(Optional.empty());
+        loginAs(userWithRole(Role.CUSTOMER));
+        assertThrows(ReservationNotFoundException.class,
+                () -> validator.validateReservationUpdate(id));
+    }
+
     private void givenReservationExists(Reservation reservation) {
         when(reservationRepository.findById(reservation.getId()))
                 .thenReturn(Optional.of(reservation));
