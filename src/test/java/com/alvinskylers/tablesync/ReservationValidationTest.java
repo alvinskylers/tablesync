@@ -38,6 +38,7 @@ public class ReservationValidationTest {
     @Mock ReservationRepository reservationRepository;
     @InjectMocks ReservationValidator validator;
 
+    // Creation Tests
     @Test
     void creation_endBeforeStart_throwsInvalidTime() {
         var request = new CreateReservationRequest(
@@ -75,7 +76,6 @@ public class ReservationValidationTest {
                 () -> validator.validateReservationCreation(request));
     }
 
-
     @Test
     void creation_noOverlap_doesNotThrow() {
         UUID tableId = UUID.randomUUID();
@@ -93,14 +93,7 @@ public class ReservationValidationTest {
                 eq(tableId), anyList(), eq(start), eq(end));
     }
 
-    private Reservation reservationOf(User customer, Status status) {
-        return Reservation.builder()
-                .id(UUID.randomUUID())
-                .customer(customer)
-                .status(status)
-                .build();
-    }
-
+    // Cancellation Tests
     @Test
     void cancellation_customerCancelOwnReservation_allowed() {
         var owner = userWithRole(Role.CUSTOMER);
@@ -156,9 +149,61 @@ public class ReservationValidationTest {
                 () -> validator.validateReservationUpdate(id));
     }
 
+    // Update Tests
+    @Test
+    void update_customer_throwsAuthorizationDenied() {
+        var customer = userWithRole(Role.CUSTOMER);
+        var reservation = reservationOf(customer , Status.CONFIRMED);
+        givenReservationExists(reservation);
+        loginAs(customer);
+
+        assertThrows(AuthorizationDeniedException.class,
+                () -> validator.validateReservationUpdate(reservation.getId()));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = Status.class, names = {"COMPLETED", "CANCELLED", "REJECTED"})
+    void update_staffTerminalStatus_throwsStatusConflict(Status status) {
+        var reservation = reservationOf(userWithRole(Role.CUSTOMER), status);
+        givenReservationExists(reservation);
+        loginAs(userWithRole(Role.WAITER));
+
+        assertThrows(ReservationUpdateStatusException.class,
+                () -> validator.validateReservationCancellation(reservation.getId()));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = Status.class, names = {"PENDING", "CONFIRMED"})
+    void update_staffOnActiveStatus_allowed(Status status) {
+        var reservation = reservationOf(userWithRole(Role.CUSTOMER), status);
+        givenReservationExists(reservation);
+        loginAs(userWithRole(Role.WAITER));
+
+        assertDoesNotThrow(() -> validator.validateReservationUpdate(reservation.getId()));
+    }
+
+    @Test
+    void update_reservationNotFound_throwsNotFound() {
+        var id = UUID.randomUUID();
+        when(reservationRepository.findById(id))
+                .thenReturn(Optional.empty());
+        loginAs(userWithRole(Role.WAITER));
+        assertThrows(ReservationNotFoundException.class,
+                () -> validator.validateReservationUpdate(id));
+    }
+
+    // Helper Methods
     private void givenReservationExists(Reservation reservation) {
         when(reservationRepository.findById(reservation.getId()))
                 .thenReturn(Optional.of(reservation));
+    }
+
+    private Reservation reservationOf(User customer, Status status) {
+        return Reservation.builder()
+                .id(UUID.randomUUID())
+                .customer(customer)
+                .status(status)
+                .build();
     }
 
     private User userWithRole(Role role) {
