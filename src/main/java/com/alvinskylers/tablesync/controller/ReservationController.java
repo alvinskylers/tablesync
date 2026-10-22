@@ -24,7 +24,7 @@ public class ReservationController {
 
     private final ReservationService reservationService;
 
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'HOST', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'WAITER', 'ADMIN')")
     @GetMapping
     public ResponseEntity<Page<ReservationResponse>> getReservations(
             @RequestParam(defaultValue = "0") int page,
@@ -49,7 +49,7 @@ public class ReservationController {
                 .body(reservation);
     }
 
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'HOST', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'WAITER', 'ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ReservationResponse> cancelReservation(@PathVariable UUID id) {
         ReservationResponse reservation = reservationService.cancelReservation(id);
@@ -58,7 +58,7 @@ public class ReservationController {
                 .body(reservation);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','HOST')")
+    @PreAuthorize("hasAnyRole('ADMIN','WAITER')")
     @PatchMapping("/{id}")
     public ResponseEntity<ReservationResponse> updateReservation(@PathVariable UUID id, @Valid @RequestBody UpdateReservationRequest request) {
         ReservationResponse reservation = reservationService.updateReservation(id, request);
